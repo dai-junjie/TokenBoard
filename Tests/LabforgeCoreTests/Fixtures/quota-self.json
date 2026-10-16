@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "data": {
+    "team_name": "OrbitOS",
+    "is_member": true,
+    "team_enabled": true,
+    "team_has_grant": true,
+    "lab_grant_balance": {
+      "remaining": 980,
+      "granted": 1200
+    },
+    "lab": {
+      "daily_quota": 500,
+      "daily_used": 100
+    },
+    "team_user": {
+      "daily_quota": 200,
+      "daily_used": 50
+    },
+    "user": {
+      "daily_quota": -1,
+      "daily_used": 10
+    },
+    "user_grant_balance": {
+      "remaining": 120,
+      "granted": 150
+    },
+    "quota_preference": "team_first"
+  }
+}

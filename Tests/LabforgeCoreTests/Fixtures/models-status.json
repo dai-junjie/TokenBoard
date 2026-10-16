@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "data": {
+    "team_name": "OrbitOS",
+    "items": [
+      {
+        "group": "gpt-5",
+        "label": "GPT-5",
+        "status": "available",
+        "availability": 0.98,
+        "best_response_time": 420,
+        "average_response_time": 610,
+        "last_test_time": 1751940000,
+        "history": [
+          { "success": true, "latency_ms": 420, "tested_at": 1751940000 }
+        ]
+      },
+      {
+        "group": "claude-sonnet",
+        "label": "Claude Sonnet",
+        "status": "degraded",
+        "availability": 0.66,
+        "best_response_time": 850,
+        "average_response_time": 1200,
+        "last_test_time": 1751940000,
+        "history": [
+          { "success": false, "latency_ms": 0, "tested_at": 1751940000 }
+        ]
+      }
+    ]
+  }
+}
