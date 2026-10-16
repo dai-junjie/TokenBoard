@@ -9,7 +9,7 @@ struct LabforgeMenuBarApp: App {
         Settings { EmptyView() }
             .commands {
                 CommandGroup(replacing: .appTermination) {
-                    Button("退出 Labforge") {
+                    Button("退出 TokenBoard") {
                         NSApp.terminate(nil)
                     }
                     .keyboardShortcut("q", modifiers: .command)

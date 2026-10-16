@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="LabforgeMenuBarApp"
-DISPLAY_NAME="Labforge"
+DISPLAY_NAME="TokenBoard"
 INFO_PLIST="$ROOT_DIR/Packaging/Info.plist"
 SCRATCH_DIR="$ROOT_DIR/.build/app"
 PACKAGE_DIR="$ROOT_DIR/.build/package"

@@ -26,7 +26,7 @@ final class StatusBarController: NSObject {
         )
         super.init()
 
-        statusItem.button?.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: "Labforge")
+        statusItem.button?.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: "TokenBoard")
         statusItem.button?.target = self
         statusItem.button?.action = #selector(togglePanel)
 

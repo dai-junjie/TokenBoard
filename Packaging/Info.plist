@@ -11,9 +11,9 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Labforge</string>
+	<string>TokenBoard</string>
 	<key>CFBundleDisplayName</key>
-	<string>Labforge</string>
+	<string>TokenBoard</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
     <key>CFBundlePackageType</key>

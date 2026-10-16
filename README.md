@@ -1,4 +1,4 @@
-# Labforge Menu Bar
+# TokenBoard
 
 统一版本，显示 Labforge 额度、模型可用性和排行榜，以及米醋 API 余额、近 24 小时消耗、今日消耗、累计消耗。不再包含 Codex Key 池或 API Key 切换、同步功能。
 
@@ -30,4 +30,4 @@ swift run MicuOAuthVerify
 ./scripts/build_dmg.sh
 ```
 
-发布产物：`dist/Labforge.dmg`。旧 Key 池的本地数据和旧版本安装包不会自动删除；应用不会再读取或应用其中的 Key。
+发布产物：`dist/TokenBoard.dmg`，内含 `TokenBoard.app`。旧 Key 池的本地数据和旧版本安装包不会自动删除；应用不会再读取或应用其中的 Key。

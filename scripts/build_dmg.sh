@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"
-DISPLAY_NAME="Labforge"
-DMG_NAME="Labforge.dmg"
+DISPLAY_NAME="TokenBoard"
+DMG_NAME="TokenBoard.dmg"
 APP_DIR="$("$ROOT_DIR/scripts/build_app_bundle.sh")"
 STAGING_DIR="$ROOT_DIR/.build/dmg-staging"
 DMG_PATH="$DIST_DIR/$DMG_NAME"

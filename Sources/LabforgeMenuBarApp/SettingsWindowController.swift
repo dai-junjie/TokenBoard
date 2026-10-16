@@ -34,7 +34,7 @@ final class SettingsWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "Labforge 设置"
+        window.title = "TokenBoard 设置"
 
         window.contentViewController = hostingController
         window.isReleasedWhenClosed = false
