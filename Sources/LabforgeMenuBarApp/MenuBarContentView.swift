@@ -73,6 +73,7 @@ struct MenuBarContentView: View {
         }
         .padding()
         .frame(width: 360)
+        .disclosureGroupStyle(FullRowDisclosureStyle())
     }
 
     private var appTitle: String {
@@ -378,5 +379,31 @@ struct MenuBarContentView: View {
             return String(format: "%.2f s", Double(milliseconds) / 1_000)
         }
         return "\(milliseconds) ms"
+    }
+}
+
+private struct FullRowDisclosureStyle: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                configuration.isExpanded.toggle()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: configuration.isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 12)
+                    configuration.label
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(configuration.isExpanded ? "已展开" : "已折叠")
+            if configuration.isExpanded {
+                configuration.content
+            }
+        }
     }
 }
