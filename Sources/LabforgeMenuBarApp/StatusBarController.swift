@@ -13,10 +13,12 @@ private struct MenuContentHeightKey: PreferenceKey {
 final class StatusBarController: NSObject {
     private let statusItem: NSStatusItem
     private let panel: NSPanel
+    private let viewModel: AppViewModel
     private var outsideClickMonitor: Any?
     private var contentHeight: CGFloat = 394
 
     init(viewModel: AppViewModel) {
+        self.viewModel = viewModel
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 360, height: 394),
@@ -88,6 +90,7 @@ final class StatusBarController: NSObject {
             return
         }
 
+        viewModel.resetMenuDisclosureState()
         guard let button = statusItem.button, let buttonWindow = button.window else { return }
         let buttonRect = button.convert(button.bounds, to: nil)
         let screenRect = buttonWindow.convertToScreen(buttonRect)

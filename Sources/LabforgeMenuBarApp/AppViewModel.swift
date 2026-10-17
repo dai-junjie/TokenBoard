@@ -6,6 +6,7 @@ struct MicuAccountState: Identifiable {
     var snapshot: MicuSnapshot?
     var status = "等待刷新"
     var isRefreshing = false
+    var refreshFailed = false
     var id: UUID { account.id }
 }
 
@@ -19,6 +20,22 @@ final class AppViewModel: ObservableObject {
         didSet {
             UserDefaults.standard.set(showsRankings, forKey: "showsRankings")
         }
+    }
+
+    @Published var expandsModelTestsByDefault: Bool {
+        didSet {
+            UserDefaults.standard.set(expandsModelTestsByDefault, forKey: "expandsModelTestsByDefault")
+            modelTestsExpanded = expandsModelTestsByDefault
+        }
+    }
+    @Published var modelTestsExpanded = true
+    @Published var micuDetailsExpanded = false
+    @Published var rankingsExpanded = false
+
+    func resetMenuDisclosureState() {
+        modelTestsExpanded = expandsModelTestsByDefault
+        micuDetailsExpanded = false
+        rankingsExpanded = false
     }
 
     private let authManager: AuthManager
@@ -58,6 +75,8 @@ final class AppViewModel: ObservableObject {
             UserDefaults.standard.set(1, forKey: rankingsPreferenceVersionKey)
         }
         self.showsRankings = UserDefaults.standard.bool(forKey: "showsRankings")
+        self.expandsModelTestsByDefault = UserDefaults.standard.object(forKey: "expandsModelTestsByDefault") as? Bool ?? true
+        self.modelTestsExpanded = expandsModelTestsByDefault
     
         if autoStart {
             start()
@@ -212,11 +231,13 @@ final class AppViewModel: ObservableObject {
             let fresh = try await client.refresh(credentials: credentials)
             guard let current = micuAccounts.firstIndex(where: { $0.id == id }) else { return }
             micuAccounts[current].snapshot = fresh
+            micuAccounts[current].refreshFailed = false
             micuAccounts[current].status = "更新于\(formatted(date: fresh.updatedAt)) · 今日按北京时间"
         } catch {
             if let current = micuAccounts.firstIndex(where: { $0.id == id }) {
                 let cached = micuAccounts[current].snapshot == nil ? "" : "（显示上次成功数据）"
                 micuAccounts[current].status = "\(error.localizedDescription)\(cached)"
+                micuAccounts[current].refreshFailed = true
             }
         }
         if let current = micuAccounts.firstIndex(where: { $0.id == id }) {
