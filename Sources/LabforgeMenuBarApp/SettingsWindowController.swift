@@ -25,7 +25,7 @@ final class SettingsWindowController {
         let contentView = SettingsView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
 
-        let contentRect = NSRect(x: 0, y: 0, width: 440, height: 500)
+        let contentRect = NSRect(x: 0, y: 0, width: 440, height: 580)
 
 
         let window = NSWindow(

@@ -89,19 +89,63 @@ struct MenuBarContentView: View {
                     NSWorkspace.shared.open(MicuClient.dashboardURL)
                 }
             }
-            if let snapshot = viewModel.micuSnapshot {
-                metricRow(label: "余额", value: snapshot.formatted(snapshot.balance))
-                metricRow(label: "近 24 小时消耗", value: snapshot.formatted(snapshot.last24Hours))
-                metricRow(label: "今日消耗", value: snapshot.formatted(snapshot.today))
-                metricRow(label: "累计消耗", value: snapshot.formatted(snapshot.total))
+            if viewModel.micuAccounts.isEmpty {
+                Text(viewModel.micuStatus)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            Text(viewModel.isRefreshingMicu ? "正在刷新米醋……" : viewModel.micuStatus)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            ForEach(viewModel.micuAccounts) { state in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(state.account.name).font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Button {
+                            Task { await viewModel.refreshMicuAccount(id: state.id) }
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("刷新此账号")
+                        .disabled(state.isRefreshing)
+                    }
+                    if let snapshot = state.snapshot {
+                        Grid(horizontalSpacing: 0, verticalSpacing: 0) {
+                            GridRow {
+                                micuMetric("余额", value: snapshot.formatted(snapshot.balance))
+                                micuMetric("近 24 小时消耗", value: snapshot.formatted(snapshot.last24Hours))
+                                    .overlay(alignment: .leading) { Rectangle().fill(.separator).frame(width: 0.5) }
+                            }
+                            Divider().gridCellColumns(2)
+                            GridRow {
+                                micuMetric("今日消耗", value: snapshot.formatted(snapshot.today))
+                                micuMetric("累计消耗", value: snapshot.formatted(snapshot.total))
+                                    .overlay(alignment: .leading) { Rectangle().fill(.separator).frame(width: 0.5) }
+                            }
+                        }
+                        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.separator, lineWidth: 0.5))
+                    }
+                    Text(state.isRefreshing ? "正在刷新……" : state.status)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             Text("近 24 小时数据为平台聚合统计，可能延迟约 5 分钟。")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func micuMetric(_ label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value)
+                .font(.system(.body, design: .monospaced).weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
     }
 
     private func metricRow(label: String, value: String) -> some View {

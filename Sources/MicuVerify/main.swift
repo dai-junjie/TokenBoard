@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import LabforgeCore
 
 @main
@@ -10,6 +11,9 @@ struct MicuVerify {
         testTodayStartsAtShanghaiMidnight()
         try await testClientRequestsAndAuthenticationFailure()
         try await testWebSessionDoesNotUsePasswordLogin()
+        try testMultipleAccountsRoundTrip()
+        try testAccountKeychainPersistenceAndRemoval()
+        try await testIndependentAccounts()
         print("MicuVerify: PASS")
     }
     static func testCurrencyConversionAndSeparateUsageWindows() throws {
@@ -87,6 +91,74 @@ struct MicuVerify {
     static func checkEqual(_ lhs: Double, _ rhs: Double, accuracy: Double) {
         precondition(abs(lhs - rhs) < accuracy)
     }
+
+    static func testMultipleAccountsRoundTrip() throws {
+        let cookie = HTTPCookie(properties: [.domain: "www.micuapi.ai", .path: "/", .name: "session", .value: "test-session"])!
+        let accounts = [
+            MicuAccount(name: "研究", login: .web(MicuWebSession(userID: 789, cookies: [cookie]))),
+            MicuAccount(name: "个人", login: .password(Credentials(username: "test", password: "test")))
+        ]
+        let restored = try JSONDecoder().decode([MicuAccount].self, from: JSONEncoder().encode(accounts))
+        precondition(restored.map(\.id) == accounts.map(\.id))
+        precondition(restored.map(\.name) == ["研究", "个人"])
+        guard case .web(let session) = restored[0].login,
+              case .password(let credentials) = restored[1].login else { fatalError("Login methods must survive restart") }
+        precondition(session.userID == 789 && credentials.username == "test")
+        let cookies = try session.validatedCookies()
+        precondition(cookies.first?.value == "test-session")
+        let empty = try JSONDecoder().decode([MicuAccount].self, from: JSONEncoder().encode([MicuAccount]()))
+        precondition(empty.isEmpty)
+    }
+
+    static func testIndependentAccounts() async throws {
+        func client() -> MicuClient {
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [MicuMockProtocol.self]
+            return MicuClient(session: URLSession(configuration: config))
+        }
+        let github = client()
+        let password = client()
+        let cookie = HTTPCookie(properties: [.domain: "www.micuapi.ai", .path: "/", .name: "session", .value: "test-session"])!
+        try await github.useWebSession(MicuWebSession(userID: 789, cookies: [cookie]))
+        let now = ISO8601DateFormatter().date(from: "2026-10-17T01:30:00Z")!
+        async let webSnapshot = github.refresh(credentials: nil, now: now)
+        async let passwordSnapshot = password.refresh(credentials: Credentials(username: "test", password: "test"), now: now)
+        let (web, other) = try await (webSnapshot, passwordSnapshot)
+        checkEqual(web.balance, 129.98, accuracy: 0.00001)
+        checkEqual(other.balance, 20, accuracy: 0.00001)
+        await password.resetSession()
+        do {
+            _ = try await password.refresh(credentials: Credentials(username: "invalid", password: "test"))
+            fatalError("Invalid second account must fail")
+        } catch MicuError.unauthorized {}
+        // Adding/removing or failing another account must not clear GitHub's cookies or ID.
+        let survivor = try await github.refresh(credentials: nil, now: now)
+        checkEqual(survivor.balance, 129.98, accuracy: 0.00001)
+    }
+
+    static func testAccountKeychainPersistenceAndRemoval() throws {
+        let service = "cc.tokenboard.verify.\(UUID().uuidString)"
+        defer {
+            SecItemDelete([kSecClass as String: kSecClassGenericPassword,
+                           kSecAttrService as String: service] as CFDictionary)
+        }
+        let store = MicuAccountStore(service: service)
+        let missing = try store.load()
+        precondition(missing == nil)
+        let account = MicuAccount(name: "个人", login: .password(Credentials(username: "test", password: "test")))
+        try store.save([account])
+        let reopened = MicuAccountStore(service: service)
+        let restored = try reopened.load()
+        precondition(restored?.first?.id == account.id)
+        var renamed = account
+        renamed.name = "研究"
+        try reopened.save([renamed])
+        let updated = try store.load()
+        precondition(updated?.first?.name == "研究")
+        try store.save([])
+        let afterRemoval = try reopened.loadOrMigrateLegacy()
+        precondition(afterRemoval.isEmpty, "Removing all accounts must not reimport a legacy login")
+    }
     static func checkEqual<T: Equatable>(_ lhs: T, _ rhs: T) {
         precondition(lhs == rhs)
     }
@@ -126,8 +198,12 @@ final class MicuMockProtocol: URLProtocol, @unchecked Sendable {
             if userID == "789" {
                 precondition(request.value(forHTTPHeaderField: "Cookie")?.contains("session=test-session") == true)
             }
+            if userID == "123" {
+                precondition(request.value(forHTTPHeaderField: "Cookie")?.contains("test-session") != true,
+                             "Password account must not receive GitHub account cookies")
+            }
             success = userID != "999"
-            payload = ["quota": 64_990_000, "used_quota": 610_010_000]
+            payload = ["quota": userID == "123" ? 10_000_000 : 64_990_000, "used_quota": 610_010_000]
         case "/api/status":
             payload = ["quota_per_unit": 500_000, "quota_display_type": "CNY", "usd_exchange_rate": 1]
         case "/api/data/self", "/api/log/self/stat":
