@@ -99,8 +99,8 @@ struct MenuBarContentView: View {
                 Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
                     GridRow {
                         Text("账号")
-                        Text("余额")
                         Text("今日消耗")
+                        Text("余额")
                         Color.clear.frame(width: 14, height: 1)
                     }
                     .font(.caption)
@@ -112,8 +112,8 @@ struct MenuBarContentView: View {
                                 .truncationMode(.middle)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .help(state.account.name)
-                            micuAmount(state.snapshot.map { $0.formatted($0.balance) })
                             micuAmount(state.snapshot.map { $0.formatted($0.today) })
+                            micuAmount(state.snapshot.map { $0.formatted($0.balance) })
                             Button {
                                 Task { await viewModel.refreshMicuAccount(id: state.id) }
                             } label: { Image(systemName: "arrow.clockwise") }
