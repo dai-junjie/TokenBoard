@@ -2,6 +2,7 @@ TokenBoard 菜单栏额度看板，仅支持 Labforge。
 
 - 查看个人与团队额度、今日 Token 用量。
 - 查看模型可用性和今日排行榜。
+- 模型测试详情和今日排行榜默认全部展开，可在设置中分别调整默认展开状态。
 - 每 5 分钟自动刷新，也可手动刷新。
 
 下载安装：下载下面的 `TokenBoard.dmg`，打开后将 `TokenBoard.app` 拖到 Applications，然后在设置中填写自己的 Labforge 账号。
