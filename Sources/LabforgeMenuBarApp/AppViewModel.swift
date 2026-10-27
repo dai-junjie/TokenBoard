@@ -28,14 +28,20 @@ final class AppViewModel: ObservableObject {
             modelTestsExpanded = expandsModelTestsByDefault
         }
     }
+    @Published var expandsRankingsByDefault: Bool {
+        didSet {
+            UserDefaults.standard.set(expandsRankingsByDefault, forKey: "expandsRankingsByDefault")
+            rankingsExpanded = expandsRankingsByDefault
+        }
+    }
     @Published var modelTestsExpanded = true
     @Published var micuDetailsExpanded = false
-    @Published var rankingsExpanded = false
+    @Published var rankingsExpanded = true
 
     func resetMenuDisclosureState() {
         modelTestsExpanded = expandsModelTestsByDefault
         micuDetailsExpanded = false
-        rankingsExpanded = false
+        rankingsExpanded = expandsRankingsByDefault
     }
 
     private let authManager: AuthManager
@@ -76,7 +82,9 @@ final class AppViewModel: ObservableObject {
         }
         self.showsRankings = UserDefaults.standard.bool(forKey: "showsRankings")
         self.expandsModelTestsByDefault = UserDefaults.standard.object(forKey: "expandsModelTestsByDefault") as? Bool ?? true
+        self.expandsRankingsByDefault = UserDefaults.standard.object(forKey: "expandsRankingsByDefault") as? Bool ?? true
         self.modelTestsExpanded = expandsModelTestsByDefault
+        self.rankingsExpanded = expandsRankingsByDefault
     
         if autoStart {
             start()

@@ -23,6 +23,7 @@ struct SettingsView: View {
 
                 Toggle("显示日排行榜", isOn: $viewModel.showsRankings)
                 Toggle("默认展开模型测试详情", isOn: $viewModel.expandsModelTestsByDefault)
+                Toggle("默认展开今日排行榜", isOn: $viewModel.expandsRankingsByDefault)
 
 
                 Divider()
