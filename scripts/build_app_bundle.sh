@@ -11,7 +11,6 @@ APP_DIR="$PACKAGE_DIR/$DISPLAY_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
-RELEASE_BIN="$SCRATCH_DIR/release/$APP_NAME"
 APP_ICON="$ROOT_DIR/Packaging/AppIcon.icns"
 BUILD_SOURCE_DIR="$ROOT_DIR/.build/package-source"
 
@@ -26,13 +25,16 @@ cp "$ROOT_DIR/Sources/LabforgeCore/DefaultLabforgeCredentials.swift.example" \
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
-swift build \
-  -c release \
-  --arch arm64 \
-  --arch x86_64 \
-  --product "$APP_NAME" \
-  --package-path "$BUILD_SOURCE_DIR" \
-  --scratch-path "$SCRATCH_DIR" >&2
+BUILD_ARGS=(
+  -c release
+  --arch arm64
+  --arch x86_64
+  --product "$APP_NAME"
+  --package-path "$BUILD_SOURCE_DIR"
+  --scratch-path "$SCRATCH_DIR"
+)
+swift build "${BUILD_ARGS[@]}" >&2
+RELEASE_BIN="$(swift build "${BUILD_ARGS[@]}" --show-bin-path)/$APP_NAME"
 
 cp "$RELEASE_BIN" "$MACOS_DIR/$APP_NAME"
 cp "$INFO_PLIST" "$CONTENTS_DIR/Info.plist"
