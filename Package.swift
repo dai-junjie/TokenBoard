@@ -8,7 +8,6 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "MicuVerify", targets: ["MicuVerify"]),
         .library(
             name: "LabforgeCore",
             targets: ["LabforgeCore"]
@@ -27,10 +26,9 @@ let package = Package(
         )
     ],
     targets: [
-        .executableTarget(name: "MicuOAuthVerify", dependencies: ["LabforgeCore"]),
-        .executableTarget(name: "MicuVerify", dependencies: ["LabforgeCore"]),
         .target(
-            name: "LabforgeCore"
+            name: "LabforgeCore",
+            exclude: ["DefaultLabforgeCredentials.swift.example"]
         ),
         .executableTarget(
             name: "LabforgeMenuBarApp",

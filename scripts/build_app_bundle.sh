@@ -13,14 +13,25 @@ MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 RELEASE_BIN="$SCRATCH_DIR/release/$APP_NAME"
 APP_ICON="$ROOT_DIR/Packaging/AppIcon.icns"
+BUILD_SOURCE_DIR="$ROOT_DIR/.build/package-source"
+
+# Package a clean source copy with empty default credentials.
+rm -rf "$BUILD_SOURCE_DIR"
+mkdir -p "$BUILD_SOURCE_DIR"
+cp "$ROOT_DIR/Package.swift" "$BUILD_SOURCE_DIR/Package.swift"
+rsync -a --exclude 'DefaultLabforgeCredentials.swift' "$ROOT_DIR/Sources/" "$BUILD_SOURCE_DIR/Sources/"
+cp "$ROOT_DIR/Sources/LabforgeCore/DefaultLabforgeCredentials.swift.example" \
+  "$BUILD_SOURCE_DIR/Sources/LabforgeCore/DefaultLabforgeCredentials.swift"
 
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 swift build \
   -c release \
+  --arch arm64 \
+  --arch x86_64 \
   --product "$APP_NAME" \
-  --package-path "$ROOT_DIR" \
+  --package-path "$BUILD_SOURCE_DIR" \
   --scratch-path "$SCRATCH_DIR" >&2
 
 cp "$RELEASE_BIN" "$MACOS_DIR/$APP_NAME"

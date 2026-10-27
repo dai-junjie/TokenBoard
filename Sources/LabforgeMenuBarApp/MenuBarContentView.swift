@@ -7,9 +7,6 @@ struct MenuBarContentView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            micuSection
-            Divider()
-
             Text(appTitle)
                 .font(.headline)
 
@@ -54,9 +51,9 @@ struct MenuBarContentView: View {
 
             HStack {
                 Button("立即刷新") {
-                    Task { await viewModel.refreshAll() }
+                    Task { await viewModel.refresh() }
                 }
-                .disabled(viewModel.isRefreshing || viewModel.isRefreshingMicu)
+                .disabled(viewModel.isRefreshing || viewModel.needsLogin)
 
                 Button("打开 Labforge") {
                     NSWorkspace.shared.open(LabforgeEndpoints.modelsDashboardURL)
@@ -79,97 +76,6 @@ struct MenuBarContentView: View {
     private var appTitle: String {
         "Labforge"
 
-    }
-
-    private var micuSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("米醋 API").font(.headline)
-                Spacer()
-                Button("打开米醋") {
-                    NSWorkspace.shared.open(MicuClient.dashboardURL)
-                }
-            }
-            if viewModel.micuAccounts.isEmpty {
-                Text(viewModel.micuStatus)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if !viewModel.micuAccounts.isEmpty {
-                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
-                    GridRow {
-                        Text("账号")
-                        Text("今日消耗")
-                        Text("余额")
-                        Color.clear.frame(width: 14, height: 1)
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    ForEach(viewModel.micuAccounts) { state in
-                        GridRow {
-                            Text(state.account.name)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .help(state.account.name)
-                            micuAmount(state.snapshot.map { $0.formatted($0.today) })
-                            micuAmount(state.snapshot.map { $0.formatted($0.balance) })
-                            Button {
-                                Task { await viewModel.refreshMicuAccount(id: state.id) }
-                            } label: { Image(systemName: "arrow.clockwise") }
-                            .buttonStyle(.borderless)
-                            .disabled(state.isRefreshing)
-                            .help("刷新此账号 · \(state.status)")
-                        }
-                        if state.snapshot == nil || state.refreshFailed {
-                            Text(state.isRefreshing ? "正在刷新……" : state.status)
-                                .font(.caption)
-                                .foregroundStyle(state.refreshFailed ? Color.orange : Color.secondary)
-                                .gridCellColumns(4)
-                        }
-                    }
-                }
-                DisclosureGroup("更多消耗数据", isExpanded: $viewModel.micuDetailsExpanded) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
-                            GridRow {
-                                Text("账号")
-                                Text("近 24 小时")
-                                Text("累计消耗")
-                            }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            ForEach(viewModel.micuAccounts) { state in
-                                GridRow {
-                                    Text(state.account.name).lineLimit(1)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                    micuAmount(state.snapshot.map { $0.formatted($0.last24Hours) })
-                                    micuAmount(state.snapshot.map { $0.formatted($0.total) })
-                                }
-                            }
-                        }
-                        ForEach(viewModel.micuAccounts) { state in
-                            Text("\(state.account.name)：\(state.isRefreshing ? "正在刷新……" : state.status)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text("今日按北京时间统计；近 24 小时为聚合数据，可能延迟约 5 分钟。")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 6)
-                }
-                .font(.subheadline)
-            }
-        }
-    }
-
-    private func micuAmount(_ value: String?) -> some View {
-        Text(value ?? "—")
-            .font(.system(.subheadline, design: .monospaced))
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .gridColumnAlignment(.trailing)
     }
 
     private func metricRow(label: String, value: String) -> some View {
@@ -215,7 +121,7 @@ struct MenuBarContentView: View {
 
     private func dailyRankings(snapshot: LabforgeSnapshot) -> some View {
         let topThree = Array(snapshot.dailyRankings.prefix(3))
-        let currentUsername = DefaultLabforgeCredentials.credentials.username
+        let currentUsername = (try? viewModel.storedCredentials())?.username ?? ""
         let currentUser = snapshot.dailyRankings.first { $0.username == currentUsername }
 
         return VStack(alignment: .leading, spacing: 6) {

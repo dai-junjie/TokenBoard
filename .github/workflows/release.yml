@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Packaging/Info.plist)
+          test "$RELEASE_TAG" = "v$VERSION"
+      - name: Verify Labforge
+        run: |
+          cp Sources/LabforgeCore/DefaultLabforgeCredentials.swift.example Sources/LabforgeCore/DefaultLabforgeCredentials.swift
+          swift run LabforgeVerify
+      - name: Build universal DMG
+        run: ./scripts/build_dmg.sh
+      - name: Verify package
+        run: |
+          lipo -verify_arch arm64 .build/package/TokenBoard.app/Contents/MacOS/LabforgeMenuBarApp
+          lipo -verify_arch x86_64 .build/package/TokenBoard.app/Contents/MacOS/LabforgeMenuBarApp
+          codesign --verify --deep --strict .build/package/TokenBoard.app
+          hdiutil verify dist/TokenBoard.dmg
+          cd dist
+          shasum -a 256 TokenBoard.dmg > TokenBoard.dmg.sha256
+      - name: Publish release with DMG
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            dist/TokenBoard.dmg dist/TokenBoard.dmg.sha256 \
+            --verify-tag --title "TokenBoard $RELEASE_TAG" \
+            --notes-file .github/release-notes.md
