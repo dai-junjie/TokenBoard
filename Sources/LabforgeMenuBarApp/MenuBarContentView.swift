@@ -11,7 +11,14 @@ struct MenuBarContentView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("TeamBuddy").font(.headline)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("TeamBuddy").font(.headline)
+                    Text(viewModel.teamBuddyStatus)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
                 if let snapshot = viewModel.teamBuddySnapshot {
                     if snapshot.quotas.teams.isEmpty {
                         Text("尚未加入团队").font(.caption)
@@ -22,7 +29,6 @@ struct MenuBarContentView: View {
                             if team.isActive {
                                 metricRow("个人已用 / 上限", snapshot.formatted(team.base_used_quota) + " / "
                                     + (team.remaining_quota == nil ? "不限额" : snapshot.formatted(team.base_quota + team.temporary_quota)))
-                                metricRow("本周期消耗", snapshot.formatted(team.team_borne_quota))
                                 if team.reserved_quota > 0 {
                                     metricRow("成员专用额度", snapshot.formatted(team.reserved_quota))
                                 }
@@ -30,7 +36,8 @@ struct MenuBarContentView: View {
                                     metricRow("团队已用 / 上限", snapshot.formatted(limit.spent) + " / "
                                         + (limit.limit.map(snapshot.formatted) ?? "不限额"))
                                 }
-                                Text("下次重置：\(Date(timeIntervalSince1970: team.period_end_at).formatted(date: .abbreviated, time: .shortened))")
+                                metricRow("本周期消耗", snapshot.formatted(team.team_borne_quota))
+                                Text("下次重置：\(localizedResetTime(for: team.period_end_at))")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                                 if let overview = snapshot.overviews.first(where: { $0.team_id == team.id })?.data {
@@ -43,18 +50,23 @@ struct MenuBarContentView: View {
                         .padding(.vertical, 4)
                     }
                 }
-                Text(viewModel.teamBuddyStatus)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
-                    Button(viewModel.teamBuddyNeedsLogin ? "登录 TeamBuddy" : "打开 TeamBuddy 控制台") {
+                    Button {
                         TeamBuddyWindowController.shared.show()
                     }
+                    label: {
+                        Label(viewModel.teamBuddyNeedsLogin ? "登录 TeamBuddy" : "打开 TeamBuddy 控制台",
+                              systemImage: viewModel.teamBuddyNeedsLogin ? "person.badge.key" : "arrow.up.forward.app")
+                    }
                     .buttonStyle(.borderedProminent)
-                    Button("复制 API 地址") {
+                    Button {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(TeamBuddyEndpoints.apiBaseURL.absoluteString, forType: .string)
                     }
+                    label: {
+                        Label("复制 API 地址", systemImage: "doc.on.doc")
+                    }
+                    .buttonStyle(.bordered)
                     .help(TeamBuddyEndpoints.apiBaseURL.absoluteString)
                 }
                 .controlSize(.small)
@@ -63,8 +75,14 @@ struct MenuBarContentView: View {
             Divider()
 
             HStack {
-                Button("立即刷新") {
+                Button {
                     Task { await viewModel.refreshAll() }
+                } label: {
+                    if viewModel.isRefreshingMicu || viewModel.isRefreshingTeamBuddy {
+                        Label("刷新中…", systemImage: "arrow.triangle.2.circlepath")
+                    } else {
+                        Label("立即刷新", systemImage: "arrow.clockwise")
+                    }
                 }
                 .disabled(viewModel.isRefreshingMicu || viewModel.isRefreshingTeamBuddy)
 
@@ -83,7 +101,7 @@ struct MenuBarContentView: View {
     }
 
     private func teamRankings(team: TeamBuddySnapshot.Team, overview: TeamBuddySnapshot.Overview, snapshot: TeamBuddySnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             DisclosureGroup(isExpanded: Binding(
                 get: { !viewModel.collapsedTeamRankings.contains(team.id) },
                 set: { expanded in
@@ -102,21 +120,14 @@ struct MenuBarContentView: View {
                             Text("#\(entry.rank)")
                                 .font(.system(.body, design: .monospaced).weight(.semibold))
                                 .frame(width: 32, alignment: .leading)
-                            Text(entry.member.name)
-                                .font(.body)
-                                .lineLimit(1)
-                            if isCurrentUser {
-                                Text("我")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(Color.accentColor)
-                            }
+                            memberName(entry.member.name, isCurrentUser: isCurrentUser)
                             Spacer()
                             Text(snapshot.formatted(entry.member.consumed_quota))
                                 .font(.system(.body, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .padding(.horizontal, 5)
                         .background(isCurrentUser ? Color.accentColor.opacity(0.10) : .clear,
                                     in: RoundedRectangle(cornerRadius: 6))
                         .overlay {
@@ -126,14 +137,19 @@ struct MenuBarContentView: View {
                     }
                     if let user = snapshot.current_user,
                        !overview.rankings.contains(where: { $0.member.user_id == user.id }) {
+                        let currentUser = overview.rank(for: user.id)
                         HStack(spacing: 8) {
-                            Text("我").font(.caption.weight(.semibold)).foregroundStyle(Color.accentColor)
-                            Text(user.name).lineLimit(1)
+                            Text(currentUser.map { "#\($0.rank)" } ?? "")
+                                .font(.system(.body, design: .monospaced).weight(.semibold))
+                                .frame(width: 32, alignment: .leading)
+                            memberName(currentUser?.member.name ?? user.name, isCurrentUser: true)
                             Spacer()
-                            Text("未进入前 5 名").font(.caption).foregroundStyle(.secondary)
+                            Text(snapshot.formatted(currentUser?.member.consumed_quota ?? team.base_used_quota))
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundStyle(.secondary)
                         }
-                        .font(.body)
-                        .padding(6)
+                        .padding(.vertical, 2)
+                        .padding(.horizontal, 5)
                         .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 6))
                         .overlay {
                             RoundedRectangle(cornerRadius: 6)
@@ -150,7 +166,7 @@ struct MenuBarContentView: View {
             }
             .tint(.orange)
         }
-        .padding(10)
+        .padding(8)
         .background(.orange.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
@@ -165,6 +181,28 @@ struct MenuBarContentView: View {
             Text(value).monospacedDigit()
         }
         .font(.subheadline)
+    }
+
+    private func localizedResetTime(for timestamp: TimeInterval) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyy年M月d日 HH:mm"
+        return formatter.string(from: Date(timeIntervalSince1970: timestamp))
+    }
+
+    private func memberName(_ name: String, isCurrentUser: Bool) -> some View {
+        HStack(spacing: 4) {
+            Text(name)
+                .font(.body)
+                .lineLimit(1)
+            if isCurrentUser {
+                Text("我")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var micuSection: some View {

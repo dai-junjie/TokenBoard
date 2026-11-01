@@ -51,7 +51,7 @@ final class StatusBarController: NSObject {
                     Color.clear.preference(key: MenuContentHeightKey.self, value: geometry.size.height)
                 })
         }
-        .scrollIndicators(.hidden)
+        .scrollIndicators(.visible)
         .onPreferenceChange(MenuContentHeightKey.self) { [weak self] height in
             DispatchQueue.main.async { [weak self] in
                 guard height > 0 else { return }
