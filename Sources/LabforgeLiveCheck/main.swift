@@ -7,7 +7,10 @@ struct LabforgeLiveCheck {
         do {
             let client = LiveLabforgeClient()
             print("Login...")
-            try await client.login(credentials: DefaultLabforgeCredentials.credentials)
+            guard let credentials = try LocalCredentialsStore().loadCredentials() else {
+                throw AppError.missingCredentials
+            }
+            try await client.login(credentials: credentials)
             print("Login: OK")
 
             print("Fetch quota...")

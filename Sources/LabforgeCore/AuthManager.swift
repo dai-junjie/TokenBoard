@@ -13,7 +13,7 @@ public final class AuthManager: @unchecked Sendable {
     }
 
     public func storedCredentials() throws -> Credentials? {
-        try credentialsStore.loadCredentials() ?? DefaultLabforgeCredentials.credentials
+        try credentialsStore.loadCredentials()
     }
 
     public func saveCredentials(username: String, password: String) throws {

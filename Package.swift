@@ -28,7 +28,7 @@ let package = Package(
     targets: [
         .target(
             name: "LabforgeCore",
-            exclude: ["DefaultLabforgeCredentials.swift.example"]
+            exclude: ["DefaultLabforgeCredentials.swift", "DefaultLabforgeCredentials.swift.example"]
         ),
         .executableTarget(
             name: "LabforgeMenuBarApp",

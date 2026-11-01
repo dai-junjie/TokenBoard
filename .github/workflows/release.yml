@@ -23,9 +23,8 @@ jobs:
         run: |
           VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Packaging/Info.plist)
           test "$RELEASE_TAG" = "v$VERSION"
-      - name: Verify Labforge
+      - name: Verify TeamBuddy
         run: |
-          cp Sources/LabforgeCore/DefaultLabforgeCredentials.swift.example Sources/LabforgeCore/DefaultLabforgeCredentials.swift
           swift run LabforgeVerify
       - name: Build universal DMG
         run: ./scripts/build_dmg.sh
