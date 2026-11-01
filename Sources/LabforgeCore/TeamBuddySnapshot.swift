@@ -43,11 +43,19 @@ public struct TeamBuddySnapshot: Decodable, Sendable {
         public let member_usage: [MemberUsage]?
 
         public var rankings: [RankedMember] {
+            rankedMembers.prefix(5).map { $0 }
+        }
+
+        public func rank(for userID: Int) -> RankedMember? {
+            rankedMembers.first { $0.member.user_id == userID }
+        }
+
+        private var rankedMembers: [RankedMember] {
             let members = (member_usage ?? []).sorted {
                 $0.consumed_quota == $1.consumed_quota
                     ? $0.user_id < $1.user_id : $0.consumed_quota > $1.consumed_quota
             }
-            return members.prefix(5).map { member in
+            return members.map { member in
                 RankedMember(rank: members.firstIndex { $0.consumed_quota == member.consumed_quota }! + 1,
                              member: member)
             }

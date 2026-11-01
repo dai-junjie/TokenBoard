@@ -64,6 +64,12 @@ struct LabforgeVerify {
                 $0.member.user_id == signedSnapshot.current_user?.id
             }
             try expect(ownRank?.member.name == "Bob" && ownRank?.rank == 1, "Own row must use the signed-in user's identity")
+            let fullRankingJSON = rankedJSON.replacingOccurrences(
+                of: #""member_usage":[{"user_id":2,"username":"second","display_name":"","consumed_quota":500000},{"user_id":1,"username":"first","display_name":"Alice","consumed_quota":1000000},{"user_id":3,"username":"tied","display_name":"Bob","consumed_quota":1000000}]"#,
+                with: #""member_usage":[{"user_id":2,"username":"second","display_name":"","consumed_quota":500000},{"user_id":1,"username":"first","display_name":"Alice","consumed_quota":1000000},{"user_id":3,"username":"tied","display_name":"Bob","consumed_quota":1000000},{"user_id":4,"username":"fourth","display_name":"","consumed_quota":450000},{"user_id":5,"username":"fifth","display_name":"","consumed_quota":400000},{"user_id":6,"username":"sixth","display_name":"","consumed_quota":300000},{"user_id":7,"username":"seventh","display_name":"","consumed_quota":200000}]"#)
+            let outsideTopFive = try TeamBuddySnapshot.parse(fullRankingJSON).overviews[0].data
+            try expect(outsideTopFive?.rankings.count == 5, "Visible ranking should remain limited to five members")
+            try expect(outsideTopFive?.rank(for: 7)?.rank == 7, "Current user rank should include members beyond the visible top five")
             try expect(teamBuddy.current_user == nil, "Older snapshots without identity must remain readable")
             do {
                 _ = try TeamBuddySnapshot.parse(#"{"error":"login_required"}"#)
