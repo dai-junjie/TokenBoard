@@ -30,7 +30,8 @@ let package = Package(
         .executableTarget(name: "MicuOAuthVerify", dependencies: ["LabforgeCore"]),
         .executableTarget(name: "MicuVerify", dependencies: ["LabforgeCore"]),
         .target(
-            name: "LabforgeCore"
+            name: "LabforgeCore",
+            exclude: ["DefaultLabforgeCredentials.swift", "DefaultLabforgeCredentials.swift.example"]
         ),
         .executableTarget(
             name: "LabforgeMenuBarApp",

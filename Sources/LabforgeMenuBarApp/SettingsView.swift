@@ -1,11 +1,9 @@
+import AppKit
 import SwiftUI
 import LabforgeCore
 
 struct SettingsView: View {
     @ObservedObject var viewModel: AppViewModel
-    @State private var username = ""
-    @State private var password = ""
-
     @State private var micuAccountName = ""
     @State private var micuUsername = ""
     @State private var micuPassword = ""
@@ -13,18 +11,23 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Labforge").font(.headline)
-                TextField("Labforge 用户名", text: $username)
-                SecureField("密码", text: $password)
-                Button("保存登录信息") {
-                    viewModel.saveCredentials(username: username, password: password)
+                Text("TeamBuddy").font(.headline)
+                Text("首次通过网页登录，完成后关闭窗口；额度会直接显示在菜单栏。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("打开 TeamBuddy 控制台") {
+                    TeamBuddyWindowController.shared.show()
                 }
-                .disabled(username.isEmpty || password.isEmpty)
-
-                Toggle("显示日排行榜", isOn: $viewModel.showsRankings)
-                Toggle("默认展开模型测试详情", isOn: $viewModel.expandsModelTestsByDefault)
-                Toggle("默认展开今日排行榜", isOn: $viewModel.expandsRankingsByDefault)
-
+                Text("API Base URL")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(TeamBuddyEndpoints.apiBaseURL.absoluteString)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                Button("复制 API 地址") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(TeamBuddyEndpoints.apiBaseURL.absoluteString, forType: .string)
+                }
 
                 Divider()
                 Text("米醋账号").font(.headline)
@@ -54,22 +57,12 @@ struct SettingsView: View {
                 Text(viewModel.micuStatus)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-
-                Text(viewModel.statusMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
             .textFieldStyle(.roundedBorder)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
         }
         .frame(width: 420, height: 560)
-        .task {
-            if let credentials = try? viewModel.storedCredentials() {
-                username = credentials.username
-                password = credentials.password
-            }
-        }
     }
 }
 
