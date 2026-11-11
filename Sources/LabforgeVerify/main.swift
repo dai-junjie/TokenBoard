@@ -37,18 +37,41 @@ actor StubLabforgeClient: LabforgeClientProtocol {
 struct LabforgeVerify {
     static func main() async {
         do {
+            let periodFixture = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+                .appendingPathComponent("Tests/LabforgeCoreTests/Fixtures/teambuddy-period-quotas.json")
+            let periodSnapshot = try TeamBuddySnapshot.parse(String(contentsOf: periodFixture, encoding: .utf8))
+            try expect(periodSnapshot.quotas.teams.count == 1, "Current period-based API must load without legacy quota fields")
+            try expect(periodSnapshot.overviews[0].data?.rankings.first?.member.name == "Alice", "Current overview must load rankings without daily_limit")
+            let periodTeam = periodSnapshot.quotas.teams[0]
+            let limits = try expectNotNil(periodTeam.limits, "Current member period limits must be preserved")
+            try expect(limits.map(\.periodName) == ["日", "周", "月"], "Quota windows must remain distinct")
+            try expect(limits[0].effective_mode == "limited" && limits[0].effective_quota == 15_000_000,
+                       "Inherited limits must use the effective quota")
+            try expect(limits[0].shared_used == 1_000_000 && limits[0].remaining_quota == 14_500_000,
+                       "Shared usage and remaining quota including temporary grants must remain distinct")
+            try expect(limits[2].effective_mode == "unlimited" && limits[2].remaining_quota == nil,
+                       "Unlimited periods must not become zero limits")
+            try expect(periodTeam.temporaryRemaining == 500_000, "Temporary grants repeated in each window must count once")
+            try expect(periodTeam.consumed_quota == 1_250_000, "Own ranking fallback must include reserved consumption")
+            try expect(periodTeam.nextResetAt == 1_793_577_600, "Next reset must use a limited period")
+            try expect(periodSnapshot.overviews[0].data?.daily_limit == nil, "Removed team daily limits must remain unavailable")
+            let allUnlimitedJSON = try String(contentsOf: periodFixture, encoding: .utf8)
+                .replacingOccurrences(of: "\"effective_mode\": \"limited\"", with: "\"effective_mode\": \"unlimited\"")
+            let allUnlimited = try TeamBuddySnapshot.parse(allUnlimitedJSON)
+            try expect(allUnlimited.quotas.teams[0].nextResetAt == nil,
+                       "All-unlimited periods must not display a fabricated reset")
             let teamBuddyJSON = #"{"quotas":{"teams":[{"team_id":2,"team_name":"Research","member_status":"active","team_status":"active","base_quota":20000000,"temporary_quota":0,"base_used_quota":500000,"remaining_quota":19500000,"reserved_quota":0,"team_borne_quota":1000000,"period_end_at":1793577600}]},"overviews":[{"team_id":2,"data":{"daily_limit":{"quota":150000000,"spent":17500000}}}],"currency":{"quota_per_unit":500000,"quota_display_type":"CNY","usd_exchange_rate":1}}"#
             let teamBuddy = try TeamBuddySnapshot.parse(teamBuddyJSON)
             try expect(teamBuddy.quotas.teams[0].remaining_quota == 19_500_000, "TeamBuddy should preserve actual remaining quota")
             try expect(teamBuddy.formatted(19_500_000) == "¥39.00", "TeamBuddy must use the server's currency conversion")
-            try expect(teamBuddy.overviews[0].data?.daily_limit.remaining == 132_500_000, "TeamBuddy team remaining must subtract spent")
+            try expect(teamBuddy.overviews[0].data?.daily_limit?.remaining == 132_500_000, "TeamBuddy team remaining must subtract spent")
             let unlimitedJSON = teamBuddyJSON.replacingOccurrences(of: #""remaining_quota":19500000"#, with: #""remaining_quota":null"#)
                 .replacingOccurrences(of: #""quota":150000000"#, with: #""quota":null"#)
             let unlimited = try TeamBuddySnapshot.parse(unlimitedJSON)
             try expect(unlimited.quotas.teams[0].remaining_quota == nil, "Unlimited personal quota must not become zero")
-            try expect(unlimited.overviews[0].data?.daily_limit.remaining == nil, "Unlimited team quota must not become zero")
+            try expect(unlimited.overviews[0].data?.daily_limit?.remaining == nil, "Unlimited team quota must not become zero")
             let negativeLimit = try TeamBuddySnapshot.parse(teamBuddyJSON.replacingOccurrences(of: #""quota":150000000"#, with: #""quota":-1"#))
-            try expect(negativeLimit.overviews[0].data?.daily_limit.remaining == nil, "Negative team limit means unlimited")
+            try expect(negativeLimit.overviews[0].data?.daily_limit?.remaining == nil, "Negative team limit means unlimited")
             let stoppedTeam = try TeamBuddySnapshot.parse(teamBuddyJSON.replacingOccurrences(of: #""team_status":"active""#, with: #""team_status":"disabled""#))
             try expect(!stoppedTeam.quotas.teams[0].isActive, "Disabled teams must not appear available")
             let rankedJSON = teamBuddyJSON.replacingOccurrences(of: #""daily_limit":{"quota":150000000,"spent":17500000}"#,

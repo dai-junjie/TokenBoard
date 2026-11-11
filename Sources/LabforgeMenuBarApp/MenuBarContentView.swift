@@ -27,8 +27,22 @@ struct MenuBarContentView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(team.team_name).font(.subheadline.weight(.medium))
                             if team.isActive {
-                                metricRow("个人已用 / 上限", snapshot.formatted(team.base_used_quota) + " / "
-                                    + (team.remaining_quota == nil ? "不限额" : snapshot.formatted(team.base_quota + team.temporary_quota)))
+                                if let limits = team.limits {
+                                    ForEach(limits) { limit in
+                                        metricRow("个人\(limit.periodName)已用 / 限额", snapshot.formatted(limit.shared_used) + " / "
+                                            + (limit.effective_mode == "unlimited" ? "不限额"
+                                                : limit.effective_mode == "limited" ? snapshot.formatted(limit.effective_quota) : "--"))
+                                    }
+                                    if let temporary = team.temporaryRemaining, temporary > 0 {
+                                        metricRow("剩余临时额度", snapshot.formatted(temporary))
+                                    }
+                                    Text("个人限额按共享消耗计算；专用额度单独计算。")
+                                        .font(.caption2).foregroundStyle(.secondary)
+                                } else if let used = team.base_used_quota, let quota = team.base_quota,
+                                          let temporary = team.temporary_quota {
+                                    metricRow("个人已用 / 上限", snapshot.formatted(used) + " / "
+                                        + (team.remaining_quota == nil ? "不限额" : snapshot.formatted(quota + temporary)))
+                                }
                                 if team.reserved_quota > 0 {
                                     metricRow("成员专用额度", snapshot.formatted(team.reserved_quota))
                                 }
@@ -37,9 +51,11 @@ struct MenuBarContentView: View {
                                         + (limit.limit.map(snapshot.formatted) ?? "不限额"))
                                 }
                                 metricRow("本周期消耗", snapshot.formatted(team.team_borne_quota))
-                                Text("下次重置：\(localizedResetTime(for: team.period_end_at))")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                if let resetAt = team.nextResetAt {
+                                    Text("下次重置：\(localizedResetTime(for: resetAt))")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
                                 if let overview = snapshot.overviews.first(where: { $0.team_id == team.id })?.data {
                                     teamRankings(team: team, overview: overview, snapshot: snapshot)
                                 }
@@ -144,7 +160,8 @@ struct MenuBarContentView: View {
                                 .frame(width: 32, alignment: .leading)
                             memberName(currentUser?.member.name ?? user.name, isCurrentUser: true)
                             Spacer()
-                            Text(snapshot.formatted(currentUser?.member.consumed_quota ?? team.base_used_quota))
+                            Text((currentUser?.member.consumed_quota ?? team.consumed_quota ?? team.base_used_quota)
+                                .map(snapshot.formatted) ?? "--")
                                 .font(.system(.body, design: .monospaced))
                                 .foregroundStyle(.secondary)
                         }

@@ -22,15 +22,49 @@ public struct TeamBuddySnapshot: Decodable, Sendable {
         public let team_name: String
         public let member_status: String
         public let team_status: String
-        public let base_quota: Int
-        public let temporary_quota: Int
-        public let base_used_quota: Int
+        public let limits: [PeriodLimit]?
+        public let consumed_quota: Int?
+        // Older responses used one quota window instead of per-period limits.
+        public let base_quota: Int?
+        public let temporary_quota: Int?
+        public let base_used_quota: Int?
         public let remaining_quota: Int?
         public let reserved_quota: Int
         public let team_borne_quota: Int
         public let period_end_at: TimeInterval
         public var id: Int { team_id }
         public var isActive: Bool { member_status == "active" && team_status == "active" }
+        public var nextResetAt: TimeInterval? {
+            if let limits {
+                return limits.filter { $0.effective_mode == "limited" }
+                    .map(\.period_end_at).filter { $0 > 0 }.min()
+            }
+            return period_end_at > 0 ? period_end_at : nil
+        }
+        public var temporaryRemaining: Int? {
+            // Each period repeats the same temporary grant; count it once.
+            limits?.map(\.temporary_remaining).max()
+        }
+    }
+
+    public struct PeriodLimit: Decodable, Identifiable, Sendable {
+        public let scope: String
+        public let period: String
+        public let effective_mode: String
+        public let effective_quota: Int
+        public let shared_used: Int
+        public let temporary_remaining: Int
+        public let remaining_quota: Int?
+        public let period_end_at: TimeInterval
+        public var id: String { "\(scope):\(period)" }
+        public var periodName: String {
+            switch period {
+            case "day": return "日"
+            case "week": return "周"
+            case "month": return "月"
+            default: return period
+            }
+        }
     }
 
     public struct OverviewEntry: Decodable, Sendable {
@@ -39,7 +73,7 @@ public struct TeamBuddySnapshot: Decodable, Sendable {
     }
 
     public struct Overview: Decodable, Sendable {
-        public let daily_limit: DailyLimit
+        public let daily_limit: DailyLimit?
         public let member_usage: [MemberUsage]?
 
         public var rankings: [RankedMember] {

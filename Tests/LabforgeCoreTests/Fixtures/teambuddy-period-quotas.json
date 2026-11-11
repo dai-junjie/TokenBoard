@@ -1,0 +1,136 @@
+{
+  "quotas": {
+    "teams": [
+      {
+        "team_id": 2,
+        "team_name": "Research",
+        "member_status": "active",
+        "team_status": "active",
+        "reserved_quota": 250000,
+        "team_borne_quota": 1500000,
+        "consumed_quota": 1250000,
+        "period_end_at": 1793577600,
+        "limits": [
+          {
+            "scope": "member",
+            "period": "day",
+            "mode": "inherit",
+            "effective_mode": "limited",
+            "effective_quota": 15000000,
+            "shared_used": 1000000,
+            "grant_used": 250000,
+            "temporary_remaining": 500000,
+            "carryover_quota": 0,
+            "remaining_quota": 14500000,
+            "period_end_at": 1793577600,
+            "state": "ok"
+          },
+          {
+            "scope": "member",
+            "period": "week",
+            "mode": "inherit",
+            "effective_mode": "limited",
+            "effective_quota": 50000000,
+            "shared_used": 2000000,
+            "grant_used": 250000,
+            "temporary_remaining": 500000,
+            "carryover_quota": 0,
+            "remaining_quota": 48500000,
+            "period_end_at": 1793577600,
+            "state": "ok"
+          },
+          {
+            "scope": "member",
+            "period": "month",
+            "mode": "inherit",
+            "effective_mode": "unlimited",
+            "effective_quota": 0,
+            "shared_used": 3000000,
+            "grant_used": 250000,
+            "temporary_remaining": 500000,
+            "carryover_quota": 0,
+            "remaining_quota": null,
+            "period_end_at": 1793577600,
+            "state": "unlimited"
+          }
+        ]
+      }
+    ]
+  },
+  "overviews": [
+    {
+      "team_id": 2,
+      "data": {
+        "my_limits": [
+          {
+            "scope": "member",
+            "period": "day",
+            "mode": "inherit",
+            "effective_mode": "limited",
+            "effective_quota": 15000000,
+            "shared_used": 1000000,
+            "grant_used": 250000,
+            "temporary_remaining": 500000,
+            "carryover_quota": 0,
+            "remaining_quota": 14500000,
+            "period_end_at": 1793577600,
+            "state": "ok"
+          },
+          {
+            "scope": "member",
+            "period": "week",
+            "mode": "inherit",
+            "effective_mode": "limited",
+            "effective_quota": 50000000,
+            "shared_used": 2000000,
+            "grant_used": 250000,
+            "temporary_remaining": 500000,
+            "carryover_quota": 0,
+            "remaining_quota": 48500000,
+            "period_end_at": 1793577600,
+            "state": "ok"
+          },
+          {
+            "scope": "member",
+            "period": "month",
+            "mode": "inherit",
+            "effective_mode": "unlimited",
+            "effective_quota": 0,
+            "shared_used": 3000000,
+            "grant_used": 250000,
+            "temporary_remaining": 500000,
+            "carryover_quota": 0,
+            "remaining_quota": null,
+            "period_end_at": 1793577600,
+            "state": "unlimited"
+          }
+        ],
+        "member_usage": [
+          {
+            "user_id": 1,
+            "username": "alice",
+            "display_name": "Alice",
+            "consumed_quota": 1250000
+          }
+        ],
+        "team_period_states": [
+          {
+            "period": "day",
+            "state": "ok",
+            "reset_at": 1793577600
+          }
+        ]
+      }
+    }
+  ],
+  "current_user": {
+    "id": 1,
+    "username": "alice",
+    "display_name": "Alice"
+  },
+  "currency": {
+    "quota_per_unit": 500000,
+    "quota_display_type": "CNY",
+    "usd_exchange_rate": 1
+  }
+}
