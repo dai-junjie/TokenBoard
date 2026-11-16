@@ -42,6 +42,13 @@ struct LabforgeVerify {
             let periodSnapshot = try TeamBuddySnapshot.parse(String(contentsOf: periodFixture, encoding: .utf8))
             try expect(periodSnapshot.quotas.teams.count == 1, "Current period-based API must load without legacy quota fields")
             try expect(periodSnapshot.overviews[0].data?.rankings.first?.member.name == "Alice", "Current overview must load rankings without daily_limit")
+            try expect(periodSnapshot.overviews[0].data?.teamDailyStatus == "充足", "Daily team state must come from the overview")
+            let periodJSON = try String(contentsOf: periodFixture, encoding: .utf8)
+            for (state, label) in [("reached", "已用完"), ("near", "接近上限"), ("unlimited", "不限额"), ("future", "--")] {
+                let json = periodJSON.replacingOccurrences(of: "\"state\": \"ok\"", with: "\"state\": \"\(state)\"")
+                let snapshot = try TeamBuddySnapshot.parse(json)
+                try expect(snapshot.overviews[0].data?.teamDailyStatus == label, "Daily team state must match the site: \(state)")
+            }
             let periodTeam = periodSnapshot.quotas.teams[0]
             let limits = try expectNotNil(periodTeam.limits, "Current member period limits must be preserved")
             try expect(limits.map(\.periodName) == ["日", "周", "月"], "Quota windows must remain distinct")

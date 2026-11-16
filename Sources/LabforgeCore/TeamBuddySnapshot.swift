@@ -75,6 +75,18 @@ public struct TeamBuddySnapshot: Decodable, Sendable {
     public struct Overview: Decodable, Sendable {
         public let daily_limit: DailyLimit?
         public let member_usage: [MemberUsage]?
+        public let team_period_states: [TeamPeriodState]?
+
+        public var teamDailyStatus: String? {
+            guard let state = team_period_states?.first(where: { $0.period == "day" })?.state else { return nil }
+            switch state {
+            case "ok": return "充足"
+            case "reached": return "已用完"
+            case "near": return "接近上限"
+            case "unlimited": return "不限额"
+            default: return "--"
+            }
+        }
 
         public var rankings: [RankedMember] {
             rankedMembers.prefix(5).map { $0 }
@@ -94,6 +106,11 @@ public struct TeamBuddySnapshot: Decodable, Sendable {
                              member: member)
             }
         }
+    }
+
+    public struct TeamPeriodState: Decodable, Sendable {
+        public let period: String
+        public let state: String
     }
 
     public struct MemberUsage: Decodable, Sendable {

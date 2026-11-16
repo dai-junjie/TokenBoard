@@ -46,6 +46,9 @@ struct MenuBarContentView: View {
                                 if team.reserved_quota > 0 {
                                     metricRow("成员专用额度", snapshot.formatted(team.reserved_quota))
                                 }
+                                if let overview = snapshot.overviews.first(where: { $0.team_id == team.id })?.data {
+                                    metricRow("团队每日上限", overview.teamDailyStatus ?? "--")
+                                }
                                 if let limit = snapshot.overviews.first(where: { $0.team_id == team.id })?.data?.daily_limit {
                                     metricRow("团队已用 / 上限", snapshot.formatted(limit.spent) + " / "
                                         + (limit.limit.map(snapshot.formatted) ?? "不限额"))
