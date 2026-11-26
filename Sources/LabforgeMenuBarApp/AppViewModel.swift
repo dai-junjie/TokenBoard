@@ -17,11 +17,13 @@ final class AppViewModel: ObservableObject {
     @Published var isRefreshingTeamBuddy = false
     @Published var teamBuddyNeedsLogin = false
     @Published var micuDetailsExpanded = false
-    @Published var collapsedTeamRankings: Set<Int> = []
+    @Published var expandedTeamDetails: Set<Int> = []
+    @Published var expandedTeamRankings: Set<Int> = []
 
     func resetMenuDisclosureState() {
         micuDetailsExpanded = false
-        collapsedTeamRankings.removeAll()
+        expandedTeamDetails.removeAll()
+        expandedTeamRankings.removeAll()
     }
 
     private let autoRefreshScheduler: AutoRefreshScheduler

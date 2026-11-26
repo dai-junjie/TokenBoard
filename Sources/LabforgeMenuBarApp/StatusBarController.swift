@@ -15,13 +15,13 @@ final class StatusBarController: NSObject {
     private let panel: NSPanel
     private let viewModel: AppViewModel
     private var outsideClickMonitor: Any?
-    private var contentHeight: CGFloat = 394
+    private var contentHeight: CGFloat = 320
 
     init(viewModel: AppViewModel) {
         self.viewModel = viewModel
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 394),
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 320),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: true
